@@ -1,0 +1,5 @@
+dist/*
+*.jpg
+*.png
+node_modules
+.vscode
