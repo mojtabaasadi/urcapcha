@@ -1,6 +1,12 @@
 import sharp from "sharp";
-import { compareImagesSSIM } from "./compre";
-Promise.all([sharp('input.jpg').toBuffer(),sharp('out.jpg').toBuffer()]).then(([buff1,buff2])=>{
+import { hammingDistance, phash } from "./compare";
 
-    compareImagesSSIM(buff1,buff2).then(console.log)
+Promise.all([sharp('input.jpg').toBuffer(),sharp('sample.jpg').toBuffer()]).then(([buff1,buff2])=>{
+    Promise.all([phash(buff1),phash(buff2)]).then(([hash1,hash2]) => {
+        console.log( hash1,hash2);
+        const distance = hammingDistance(hash1, hash2);
+
+        console.log("Hamming Distance:", distance);
+    })
+    
 })

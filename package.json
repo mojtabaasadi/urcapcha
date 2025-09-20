@@ -1,20 +1,54 @@
 {
-  "name": "ucaptcha",
-  "version": "1.0.0",
+  "name": "urcapcha",
+  "version": "0.1.0",
   "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "main": "dist/index.js",
+  "files": [
+    "dist","src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/component.d.ts",
+      "default": "./dist/component.js"
+    }
   },
-  "keywords": [],
+  "scripts": {
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "build": "tsc"
+  },
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "@jpinsonneau/html-to-image": "^1.11.13"
+  },
   "devDependencies": {
+    "@types/node": "^24.5.1",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/sharp": "^0.32.0",
+    "rimraf": "^6.0.1",
     "typescript": "^5.9.2"
   },
-  "dependencies": {
-    "@types/node": "^24.3.0",
-    "color": "^5.0.0",
+  "peerDependencies": {
+    "react": "^18.2.0",
     "sharp": "^0.34.3"
+  },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": [
+        "win32"
+      ],
+      "cpu": [
+        "x64"
+      ]
+    },
+    "onlyBuiltDependencies": [
+      "sharp"
+    ]
   }
 }

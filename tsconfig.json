@@ -2,12 +2,14 @@
   "compilerOptions": {
     "module": "commonjs",
     "esModuleInterop": true,
+    "declaration": true,
     "target": "es6",
     "moduleResolution": "node",
     "sourceMap": true,
-    "noImplicitAny":true,
-    "strictNullChecks":true,
-    "outDir": "dist"
-  },
-  "lib": ["es2015"]
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "outDir": "dist",
+    "jsx": "react-jsx",
+    "lib": ["ES2015", "DOM"]
+  }
 }
