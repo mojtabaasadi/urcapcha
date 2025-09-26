@@ -24,7 +24,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@jpinsonneau/html-to-image": "^1.11.13"
+    "@jpinsonneau/html-to-image": "^1.11.13",
+    "sharp": "^0.34.3"
   },
   "devDependencies": {
     "@types/node": "^24.5.1",
@@ -35,8 +36,7 @@
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
-    "react": "^18.2.0",
-    "sharp": "^0.34.3"
+    "react": "^18.2.0"
   },
   "pnpm": {
     "supportedArchitectures": {

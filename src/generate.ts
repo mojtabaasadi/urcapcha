@@ -2,60 +2,67 @@ import sharp, { Sharp } from "sharp";
 import { phash } from "./compare";
 import path from "path";
 
-const modulesPath = path.dirname(require.resolve("urcapcha")).replace('(rsc)','')
-const srcpath = path.join(process.cwd(), modulesPath,'../src')
+const modulesPath = path.dirname(require.resolve("urcapcha")).replace('(rsc)', '')
+const srcpath = path.join( modulesPath, '../src')
 export const generate = async (
-    targrtWidth: number = 400, targetHeight: number = 200
-): Promise<{ preview: Sharp,main:Sharp, p: number, piece: Sharp, phash: string }> => {
-    const pieceSize = Math.floor(targrtWidth / 4.5)
+  targrtWidth: number = 400, targetHeight: number = 200, getImagePath?:() => Promise<sharp.SharpInput>
+): Promise<{ preview: Sharp, main: Sharp, position: number, piece: Sharp, phash: string }> => {
+  let src:sharp.SharpInput|null = null
+  if(getImagePath){
+    src = await getImagePath()
+  }else{
     const picsum = `https://picsum.photos/${targrtWidth}/${targetHeight}`
-    const src = await fetch(picsum)
-    const image = await sharp(await src.arrayBuffer());
-    
-    const resizedImage = await image.resize(targrtWidth, targetHeight)
+    const req = await fetch(picsum)
+    src = await req.arrayBuffer()
+  }
+  const image = await sharp(src as sharp.SharpInput);
+  const main = await image.clone()
+  
+  if(getImagePath){
+    const meta = await image.metadata()
+    targetHeight = meta.height
+    targrtWidth = meta.width
+  }
 
-    const { channels: [r, g, b] } = await resizedImage.stats();
+  const pieceSize = Math.floor(targrtWidth / 4.5)
 
-    const isDark = r.mean + b.mean + g.mean < (3 * 255 / 2);
+  const resizedImage = await image.resize(targrtWidth, targetHeight)
 
-    const puzzle = await sharp(`${srcpath}/puzzle_piece_${isDark ? "white" : 'black'}.png`).resize(pieceSize);
-    const { info: { width, height } } = await puzzle.toBuffer({ resolveWithObject: true })
+  const { channels: [r, g, b] } = await resizedImage.stats();
 
-    const position = {
-        left: Math.floor(Math.random() * (targrtWidth - width)),
-        top: Math.floor(Math.random() * (targetHeight - height)),
-    }
+  const isDark = r.mean + b.mean + g.mean < (3 * 255 / 2);
 
-    const puzzleInvert = await sharp(`${srcpath}/puzzle_piece_negative_${isDark ? "white" : 'black'}.png`).resize(pieceSize);
-    const puzzleBuffer = await puzzle.toBuffer()
+  const puzzle = await sharp(`${srcpath}/puzzle_piece_${isDark ? "white" : 'black'}.png`).resize(pieceSize);
+  const { info: { width, height } } = await puzzle.toBuffer({ resolveWithObject: true })
 
-    const edited = await resizedImage.composite([{ input: puzzleBuffer, ...position }])
-    const edited2 = await edited.clone()
-    
+  const position = {
+    left: Math.floor(Math.random() * (targrtWidth - width)),
+    top: Math.floor(Math.random() * (targetHeight - height)),
+  }
 
-    const overlayBuffer = await puzzleInvert.toBuffer()
-    const piece = await resizedImage.extract({ ...position, width, height }).composite([{
-        input: overlayBuffer,
-        top: 0, left: 0,
-        blend: 'xor', create: { background: { r: 255, g: 255, b: 255, alpha: 0 }, width, height, channels: 4 }
-    }])
+  const puzzleInvert = await sharp(`${srcpath}/puzzle_piece_negative_${isDark ? "white" : 'black'}.png`).resize(pieceSize);
+  const puzzleBuffer = await puzzle.toBuffer()
+
+  const edited = await resizedImage.composite([{ input: puzzleBuffer, ...position }])
+  const preview = await edited.clone()
 
 
-    
-    const hash = await phash(await resizedImage.toBuffer())
+  const overlayBuffer = await puzzleInvert.toBuffer()
+  const piece = await resizedImage.extract({ ...position, width, height }).composite([{
+    input: overlayBuffer,
+    top: 0, left: 0,
+    blend: 'xor', create: { background: { r: 255, g: 255, b: 255, alpha: 0 }, width, height, channels: 4 }
+  }])
 
-    return {
-        preview: edited2,
-        piece,
-        p: position.top,
-        phash: hash,
-        main:resizedImage,
-    }
+
+
+  const hash = await phash(await resizedImage.toBuffer())
+
+  return {
+    preview,
+    piece,
+    position: position.top,
+    phash: hash,
+    main,
+  }
 }
-
-// generate().then(({main,piece,phash})=> {
-//     Promise.all([
-//         main.toFile('input.jpg'),
-//         piece.toFile('piece.png')]).then(console.log)
-//         console.log(phash)
-// });

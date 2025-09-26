@@ -1,22 +1,40 @@
-import { toJpeg } from '@jpinsonneau/html-to-image';
-import  { useEffect, useState,useRef } from 'react';
 import * as React from 'react';
+import { toJpeg } from '@jpinsonneau/html-to-image';
+import { useState, useRef } from 'react';
+import './component.css'
 
+
+const generateReableBase64 = (base64:string,type:File['type']='image/jpg') => {
+  return `data:${type};base64,${base64}`
+}
+
+
+const getImagesize = (base64Img:string,type:File['type']='image/jpg'):Promise<{width:number,height:number}> => {
+  return new Promise((resolve,reject) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({width:img.width,height:img.height})
+    }
+    img.src = generateReableBase64(base64Img,type);
+  })
+}
 
 interface UrCapchaCompProps {
   endpoint: string,
-  label:string
+  label: string,
+  description?:string,
+  onValidated?:(code:string) => void
 }
 
 interface ImageData {
   previewImageUrl: string,
   pieceImageUrl: string,
-  position:number,
+  position: number,
 }
 
-const debounce = (callback:(...args:Array<any>)=>void, wait:number) => {
-  let timeoutId:number|undefined = undefined;
-  return (...args:Array<any>) => {
+const debounce = (callback: (...args: Array<any>) => void, wait: number) => {
+  let timeoutId: number | undefined = undefined;
+  return (...args: Array<any>) => {
     window.clearTimeout(timeoutId);
     timeoutId = window.setTimeout(() => {
       callback(...args);
@@ -25,39 +43,128 @@ const debounce = (callback:(...args:Array<any>)=>void, wait:number) => {
 }
 
 export const UrCapchaComp = (props: UrCapchaCompProps) => {
-  const { endpoint,label } = props
-
+  const { endpoint, label, description = "با تغییر موقعیت دستگیره پایین پازل را حل کنید",
+    onValidated
+  } = props
   const [data, setData] = useState<ImageData | undefined>()
-  const [showPuzzle,setShowPuzzle] = useState(false)
-  const [verified,setVerifed] = useState<string|undefined>()
-  
+  const [verified, setVerifed] = useState<string | undefined>()
+  const [loading,setLoading] = useState(false)
+  const previewSize = useRef({width:0,height:0})
+  const pieceSize = useRef({width:0,height:0})
+  const checkboxRef = useRef<HTMLInputElement|null>(null)
   const puzzleRef = useRef(null)
+  const [error,setError] = useState('')
 
   const verify = useRef(debounce(() => {
-    if(puzzleRef.current)
-    toJpeg(puzzleRef.current).then(console.log);
+    setError('')
+    if (puzzleRef.current)
+      toJpeg(puzzleRef.current, { width: 400, height: 250 }).then(res => fetch(endpoint, {
+        method: 'post',
+        body: JSON.stringify({ image: res }), headers: { 'Content-Type': 'application/json' }
+      })).then(req => req.json()).then((res:{
+        verified:boolean,
+      validation_code:string
+      }) => {
+        if(res.verified){
+          setVerifed(res.validation_code)
+          onValidated?.(res.validation_code)
+          hide()
+        }else{
+          setError('انگار پازل رو به درستی حل نکردی')
+        }
+      });
 
-  }, 2000))
+  }, 3000)).current
 
-  useEffect(() => {
-    fetch(endpoint).then(response => response.json()).then(setData)
-  }, [])
 
-  const onDragStart = console.log
+  const getImage = () => {
+    setError('')
+    setLoading(true)
+    fetch(endpoint).then(response => response.json()).then((res:ImageData) => {
+      Promise.all([
+        getImagesize(res.previewImageUrl),
+        getImagesize(res.pieceImageUrl,'image/png')
+      ]).then(([preview, piece]) => {
+        previewSize.current = preview
+        pieceSize.current = piece
+      }).finally(() => {
+        setLoading(false)
+        setData(res)
+        show()
+      })
+    }).catch((err)=> {
+      if(err.response.data.message)
+        setError(err.response.data.message)
+    }).finally(() => {
+      setLoading(false)
+    })
+  }
+  
+  const hide = () => {
+    if(checkboxRef.current){
+      checkboxRef.current.checked = false
+    }
+  }
+  const show = () => {
+    if(checkboxRef.current){
+      checkboxRef.current.checked = true
+    }
+  }
+   
+  const [placement, setPlacement] = useState(0)
 
   return <div>
-    <input  onClick={() => {
-      setShowPuzzle(prev=>!prev)
-    }} type="checkbox" name="" id="urcapcha" />
-    <label htmlFor="urcapcha">{label}</label>
-    <input type="hidden" name="urcapcha-validation" value={verified} />
-    <div className="puzzle">
-      <div className="puzzle-inner" ref={puzzleRef}>
-        <img src={"data:image/jpg;base64,"+data?.previewImageUrl} alt="puzzleimage" />
-        <img src={'data:image/png;base64,'+data?.pieceImageUrl} alt="puzzlepiece" style={{top:data?.position}} />
+    <input ref={checkboxRef} type="checkbox" name="" id="urcapcha" disabled={loading} />
+    <div  className="puzzle" 
+    style={{ transform: previewSize.current.width?
+      `translate(50% ,-25%) scale(${300/previewSize.current.width})`:'translate(50% ,-25%)' }} >
+      <div className="main">
+        {loading ? <span className='loader'></span>:<label 
+        onClick={() => {
+          if(!data?.pieceImageUrl) getImage()
+        }} htmlFor={!verified ?"urcapcha":undefined} className={"box" +( verified?' verified':'')}>
+          {verified && <span className="check">
+          ✓
+          </span>}
+          
+        </label>}
+
+      <div className="label">
+        <label htmlFor="urcapcha"><strong>{label}</strong></label>
+        {description && <small>{description}</small>}
       </div>
-      <div onDragStart={onDragStart} className="handle"></div>
+      </div>
+      <div className="control">
+        <button onClick={getImage} disabled={loading}>⟳</button>
+        <button onClick={hide} disabled={loading}>⛌</button>
+      </div>
+      <div className={ `puzzle-inner ${loading ? 'loading':''}`} ref={puzzleRef} 
+      style={{ width: previewSize.current.width,height: previewSize.current.height }}>
+        {data?.previewImageUrl && <img className='preview' 
+        src={generateReableBase64(data?.previewImageUrl,'image/jpg')} 
+        alt="puzzleimage" />}
+        {data?.pieceImageUrl && <img className='piece'
+          src={generateReableBase64(data?.pieceImageUrl,'image/png')}
+          alt="puzzlepiece"
+          style={{ top: data?.position, right: `calc(${placement}/100 * (100% - 88px))` }}
+        />}
+      </div>
+      {error && <small className='error'>{error}</small>}
+      <input
+        type="range"
+        name="range-cap"
+        min="0"
+        max="100"
+        value={placement}
+        step="1" 
+        className={`handle ${loading && 'loading'}`}
+        width="100%" onChange={e =>{
+          setPlacement(Number(e.target.value))
+          verify()
+        }} />
+
     </div>
+    <input type="hidden" name="urcapcha-validation"  defaultValue={verified} />
   </div>
 }
 
