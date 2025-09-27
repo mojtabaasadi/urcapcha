@@ -4,6 +4,18 @@ import path from "path";
 
 const modulesPath = path.dirname(require.resolve("urcapcha")).replace('(rsc)', '')
 const srcpath = path.join( modulesPath, '../src')
+/**
+ * 
+ * @param targrtWidth target Image width 
+ * @param targetHeight target image height
+ * @param getImagePath callback for getting image from another source
+ * @returns Promise of { preview: Sharp, main: Sharp, position: number, piece: Sharp, phash: string }
+ * gets the image either from picsum of another external source
+ * resizes the image
+ * cuts out a buzzle piece 
+ * creates a piece to mach the cutted piece 
+ * returns the original photo piece and cutted image and hash of image for storing into db  
+ */
 export const generate = async (
   targrtWidth: number = 400, targetHeight: number = 200, getImagePath?:() => Promise<sharp.SharpInput>
 ): Promise<{ preview: Sharp, main: Sharp, position: number, piece: Sharp, phash: string }> => {

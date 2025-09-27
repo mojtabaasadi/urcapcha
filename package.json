@@ -4,7 +4,8 @@
   "description": "",
   "main": "dist/index.js",
   "files": [
-    "dist","src"
+    "dist",
+    "src"
   ],
   "exports": {
     ".": {
@@ -24,6 +25,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fingerprintjs/botd": "^1.9.1",
     "@jpinsonneau/html-to-image": "^1.11.13",
     "sharp": "^0.34.3"
   },
