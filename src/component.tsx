@@ -169,7 +169,8 @@ export const UrCapchaComp = (props: UrCapchaCompProps) => {
         {data?.pieceImageUrl && <img className='piece'
           src={generateReableBase64(data?.pieceImageUrl, 'image/png')}
           alt="puzzlepiece"
-          style={{ top: data?.position, right: `calc(${placement}/100 * (100% - 88px))` }}
+          style={{ top: data?.position, right: pieceSize.current.width?
+            `calc(${placement}/100 * (100% - ${pieceSize.current.width}px))`:0 }}
         />}
       </div>
       {error && <small className='error'>{error}</small>}
