@@ -61,12 +61,12 @@ export const UrCapchaComp = (props: UrCapchaCompProps) => {
   const checkboxRef = useRef<HTMLInputElement | null>(null)
   const puzzleRef = useRef(null)
   
-  const {current:verify} = useRef(debounce(() => {
-    setError('')
-    if (puzzleRef.current && data?.id)
+  const {current:verify} = useRef(debounce((verificationId:number|string) => {
+    if (puzzleRef.current && verificationId){
+      setError('')
       toJpeg(puzzleRef.current, { width: 400, height: 250 }).then(res => fetch(endpoint, {
         method: 'post',
-        body: JSON.stringify({ image: res,id:data.id }), 
+        body: JSON.stringify({ image: res,id:verificationId }), 
         headers: { 'Content-Type': 'application/json' }
       })).then(req => req.json()).then((res: {
         verified: boolean,
@@ -80,7 +80,8 @@ export const UrCapchaComp = (props: UrCapchaCompProps) => {
           setError('انگار پازل رو به درستی حل نکردی')
         }
       });
-
+      
+    }
   }, 3000))
 
   const checkBot = async () => {
@@ -184,7 +185,7 @@ export const UrCapchaComp = (props: UrCapchaCompProps) => {
         className={`handle ${loading && 'loading'}`}
         width="100%" onChange={e => {
           setPlacement(Number(e.target.value))
-          verify()
+          verify(data?.id)
         }} />
 
     </div>

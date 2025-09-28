@@ -31,7 +31,7 @@ export async function POST(req) {
   const input = await phash(bfr)
   const comparison = compare(hash1,input)
   return Response.json({
-    verified: comparison <= 2,
+    verified: comparison <= 4 // below 5 assert photo similarity,
     validation_code:hash1.code
   })
 }
@@ -39,8 +39,16 @@ export async function POST(req) {
 client:
 ```javascript
 import {UrCapchaComp} from 'urcapcha/client'
-
+<form action="/test" method="post">
 <UrCapchaComp endpoint="/api/capcha" label="test" />
+</form>
 ```
+or
+```javascript
+import {UrCapchaComp} from 'urcapcha/client'
 
+<UrCapchaComp endpoint="/api/capcha" label="test" onValidated={(code) => {
 
+}} />
+
+```
