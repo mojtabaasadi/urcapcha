@@ -1,6 +1,4 @@
-dist/*.js
-dist/*.ts
-dist/*.map
+dist/*
 *.jpg
 *.png
 node_modules

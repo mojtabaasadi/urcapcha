@@ -1,4 +1,7 @@
 
+![https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white](https://www.npmjs.com/package/urcapcha)
+
+
 # UrCapcha
 Inpired by puzzle capcha
 Customizable, basic, free puzzle capcha
